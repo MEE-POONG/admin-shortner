@@ -16,4 +16,4 @@ COPY --from=builder /my-space/public ./public
 COPY --from=builder /my-space/.next/standalone ./
 COPY --from=builder /my-space/.next/static ./.next/static
 EXPOSE 3000
-ENTRYPOINT ["npm", "start"]
+CMD ["node", "server.js"]
