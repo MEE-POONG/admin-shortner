@@ -11,6 +11,7 @@ COPY --from=dependencies /home/app/node_modules ./node_modules
 COPY . .
 ENV NEXT_TELEMETRY_DISABLED 1
 ENV NODE_ENV="production"
+RUN npx prisma generate
 RUN npm run build
 
 FROM node:18-slim AS runner
