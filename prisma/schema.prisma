@@ -55,11 +55,22 @@ model VerificationToken {
 }
 
 model urls {
-  id       String @id @default(auto()) @map("_id") @db.ObjectId
-  v        Int    @map("__v")
+  id       String     @id @default(auto()) @map("_id") @db.ObjectId
+  v        Int        @map("__v")
   clicks   Int
   date     String
   origUrl  String
   shortUrl String
   urlId    String
+  customer customer[]
+}
+
+model customer {
+  id           String @id @default(auto()) @map("_id") @db.ObjectId
+  idAgent      String
+  userAgent    String @unique
+  userCustomer String
+  tel          String
+  urlId        String @db.ObjectId
+  url          urls   @relation(fields: [urlId], references: [id], onDelete: Cascade)
 }

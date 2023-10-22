@@ -1,113 +1,363 @@
-import Image from 'next/image'
+'use client'
 
-export default function Home() {
+import Logger from '@/lib/logger'
+import { validateUrl } from '@/lib/validate-url'
+import axios from 'axios'
+import { SetStateAction, useEffect, useState } from 'react'
+import Swal from 'sweetalert2'
+import useAxios from 'axios-hooks'
+type ShortUrlData = {
+  id?: string
+}
+
+export default function Home () {
+  const [id, setId] = useState(null)
+  const [idAgent, setIdAgent] = useState('')
+  const [userAgent, setUserAgent] = useState('')
+  const [origUrl, setOrigUrl] = useState('')
+  const [userCustomer, setUserCustomer] = useState('')
+  const [tel, setTel] = useState('')
+  const [shortUrl, setShortUrl] = useState('')
+  const [shortUrlData, setShortUrlData] = useState<ShortUrlData>({})
+
+  const [{ data }, refetch] = useAxios('/api/customer', {
+    autoCancel: false,
+    ssr: true,
+    useCache: false,
+    manual: true
+  })
+
+  useEffect(() => {
+    refetch()
+  }, [])
+
+  const handleInputIdAgent = (e: {
+    target: { value: SetStateAction<string> }
+  }) => setIdAgent(e.target.value)
+  const handleInputUserAgent = (e: {
+    target: { value: SetStateAction<string> }
+  }) => setUserAgent(e.target.value)
+  const handleInputOrigUrl = (e: {
+    target: { value: SetStateAction<string> }
+  }) => setOrigUrl(e.target.value)
+  const handleInputUserCustomer = (e: {
+    target: { value: SetStateAction<string> }
+  }) => setUserCustomer(e.target.value)
+  const handleInputTel = (e: { target: { value: SetStateAction<string> } }) =>
+    setTel(e.target.value)
+
+  const handleGenerateShortUrl = async () => {
+    if (!validateUrl(origUrl)) {
+      return
+    }
+
+    try {
+      const response = await axios({
+        method: 'post',
+        url: '/api/short-url',
+        data: {
+          origUrl
+        }
+      })
+      setShortUrl(response.data.shortUrl)
+      setShortUrlData(response.data)
+    } catch (error) {
+      Logger(`Error generating short url: ${error}`)
+    }
+  }
+
+  const handleSubmit = async (e: { preventDefault: () => void }) => {
+    e.preventDefault()
+
+    if (!shortUrlData.id) {
+      return Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Something went wrong!'
+      })
+    }
+
+    Swal.fire({
+      title: 'Please Wait !',
+      html: 'data uploading',
+      allowOutsideClick: false,
+      didOpen: () => {
+        Swal.showLoading()
+      }
+    })
+
+    try {
+      await axios({
+        method: 'post',
+        url: '/api/customer',
+        data: {
+          id,
+          idAgent,
+          userAgent,
+          origUrl,
+          userCustomer,
+          tel,
+          urlId: shortUrlData.id
+        }
+      })
+      refetch()
+      handleClearInputs()
+      Swal.fire({
+        icon: 'success',
+        title: 'Success!',
+        text: 'Customer created or update successfully!'
+      })
+    } catch (error) {
+      Swal.fire({
+        icon: 'error',
+        title: 'Oops...',
+        text: 'Something went wrong!'
+      })
+    }
+  }
+
+  const handleClearInputs = () => {
+    setId(null)
+    setIdAgent('')
+    setUserAgent('')
+    setOrigUrl('')
+    setUserCustomer('')
+    setTel('')
+    setShortUrl('')
+    setShortUrlData({})
+  }
+
+  const handleSelectData = async (e: any) => {
+    setId(e.id)
+    setIdAgent(e.idAgent)
+    setUserAgent(e.userAgent)
+    setOrigUrl(e.url.origUrl)
+    setUserCustomer(e.userCustomer)
+    setTel(e.tel)
+    setShortUrl(e.url.shortUrl)
+    setShortUrlData(e.url)
+  }
+
+  const HEADER = [
+    // 'no',
+    'id Agent',
+    'user Agent',
+    'origUrl',
+    'user Customer',
+    // 'tel',
+    'Short Link'
+  ]
+
   return (
-    <main className="flex min-h-screen flex-col items-center justify-between p-24">
-      <div className="z-10 max-w-5xl w-full items-center justify-between font-mono text-sm lg:flex">
-        <p className="fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30">
-          Get started by editing&nbsp;
-          <code className="font-mono font-bold">src/app/page.tsx</code>
-        </p>
-        <div className="fixed bottom-0 left-0 flex h-48 w-full items-end justify-center bg-gradient-to-t from-white via-white dark:from-black dark:via-black lg:static lg:h-auto lg:w-auto lg:bg-none">
-          <a
-            className="pointer-events-none flex place-items-center gap-2 p-8 lg:pointer-events-auto lg:p-0"
-            href="https://vercel.com?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
+    <div className='md:container md:mx-auto'>
+      <form onSubmit={handleSubmit}>
+        <div className='space-y-12'>
+          <div className='border-b border-gray-900/10 pb-12 pt-6'>
+            <h2 className='text-base font-semibold leading-7 text-gray-900'>
+              Customer Information
+            </h2>
+            <p className='mt-1 text-sm leading-6 text-gray-600'>
+              Use a permanent address where you can receive mail.
+            </p>
+
+            <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6'>
+              <div className='sm:col-span-1 sm:col-start-1'>
+                <label
+                  htmlFor='id-agent'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  ID Agent
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={idAgent}
+                    onChange={handleInputIdAgent}
+                    type='text'
+                    name='id-agent'
+                    id='id-agent'
+                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+
+              <div className='sm:col-span-1'>
+                <label
+                  htmlFor='user-agent'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  User Agent
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={userAgent}
+                    onChange={handleInputUserAgent}
+                    type='text'
+                    name='user-agent'
+                    id='user-agent'
+                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+
+              <div className='sm:col-span-4'>
+                <label
+                  htmlFor='link-original'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  Link Original
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={origUrl}
+                    onChange={handleInputOrigUrl}
+                    onBlur={handleGenerateShortUrl}
+                    type='text'
+                    name='link-original'
+                    id='link-original'
+                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+
+              <div className='sm:col-span-2'>
+                <label
+                  htmlFor='user-customer'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  User Customer
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={userCustomer}
+                    onChange={handleInputUserCustomer}
+                    type='text'
+                    name='user-customer'
+                    id='user-customer'
+                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+
+              <div className='sm:col-span-2'>
+                <label
+                  htmlFor='tel'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  Tel
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={tel}
+                    onChange={handleInputTel}
+                    type='text'
+                    name='tel'
+                    id='tel'
+                    autoComplete='tel'
+                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+
+              <div className='sm:col-span-2'>
+                <label
+                  htmlFor='short-link'
+                  className='block text-sm font-medium leading-6 text-gray-900'
+                >
+                  Short Link
+                </label>
+                <div className='mt-2'>
+                  <input
+                    value={shortUrl}
+                    id='short-link'
+                    name='short-link'
+                    type='short-link'
+                    readOnly
+                    disabled
+                    className='pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
+                  />
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className='mt-6 flex items-center justify-end gap-x-6 pb-6'>
+          <button
+            onClick={handleClearInputs}
+            type='button'
+            className='text-sm font-semibold leading-6 text-gray-900'
           >
-            By{' '}
-            <Image
-              src="/vercel.svg"
-              alt="Vercel Logo"
-              className="dark:invert"
-              width={100}
-              height={24}
-              priority
-            />
-          </a>
+            Reset
+          </button>
+          <button
+            type='submit'
+            className='rounded-md bg-indigo-600 px-3 py-2 text-sm font-semibold text-white shadow-sm hover:bg-indigo-500 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-indigo-600'
+          >
+            Save
+          </button>
+        </div>
+      </form>
+
+      <div className='rounded-3xl overflow-hidden shadow-lg bg-white mb-10'>
+        <div className='overflow-x-auto'>
+          <table className='table table-zebra'>
+            <thead>
+              <tr>
+                {HEADER.map(_ => (
+                  <th
+                    key={_}
+                    className='px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    {_}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {data?.result?.map((_e: any, index: number) => (
+                <tr
+                  onClick={() => handleSelectData(_e)}
+                  className='cursor-pointer'
+                >
+                  {/* <th className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'>
+                    {index + 1}
+                  </th> */}
+                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.idAgent}
+                  </td>
+                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.userAgent}
+                  </td>
+                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.url.origUrl}
+                  </td>
+                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.userCustomer}
+                  </td>
+                  {/* <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.tel}
+                  </td> */}
+                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                    {_e.url.shortUrl}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+            <tfoot>
+              <tr>
+                {HEADER.map(_ => (
+                  <th
+                    key={_}
+                    className='px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'
+                  >
+                    {_}
+                  </th>
+                ))}
+              </tr>
+            </tfoot>
+          </table>
         </div>
       </div>
-
-      <div className="relative flex place-items-center before:absolute before:h-[300px] before:w-[480px] before:-translate-x-1/2 before:rounded-full before:bg-gradient-radial before:from-white before:to-transparent before:blur-2xl before:content-[''] after:absolute after:-z-20 after:h-[180px] after:w-[240px] after:translate-x-1/3 after:bg-gradient-conic after:from-sky-200 after:via-blue-200 after:blur-2xl after:content-[''] before:dark:bg-gradient-to-br before:dark:from-transparent before:dark:to-blue-700 before:dark:opacity-10 after:dark:from-sky-900 after:dark:via-[#0141ff] after:dark:opacity-40 before:lg:h-[360px] z-[-1]">
-        <Image
-          className="relative dark:drop-shadow-[0_0_0.3rem_#ffffff70] dark:invert"
-          src="/next.svg"
-          alt="Next.js Logo"
-          width={180}
-          height={37}
-          priority
-        />
-      </div>
-
-      <div className="mb-32 grid text-center lg:max-w-5xl lg:w-full lg:mb-0 lg:grid-cols-4 lg:text-left">
-        <a
-          href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Docs{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Find in-depth information about Next.js features and API.
-          </p>
-        </a>
-
-        <a
-          href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Learn{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Learn about Next.js in an interactive course with&nbsp;quizzes!
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Templates{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Explore the Next.js 13 playground.
-          </p>
-        </a>
-
-        <a
-          href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template&utm_campaign=create-next-app"
-          className="group rounded-lg border border-transparent px-5 py-4 transition-colors hover:border-gray-300 hover:bg-gray-100 hover:dark:border-neutral-700 hover:dark:bg-neutral-800/30"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          <h2 className={`mb-3 text-2xl font-semibold`}>
-            Deploy{' '}
-            <span className="inline-block transition-transform group-hover:translate-x-1 motion-reduce:transform-none">
-              -&gt;
-            </span>
-          </h2>
-          <p className={`m-0 max-w-[30ch] text-sm opacity-50`}>
-            Instantly deploy your Next.js site to a shareable URL with Vercel.
-          </p>
-        </a>
-      </div>
-    </main>
+    </div>
   )
 }
