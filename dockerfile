@@ -1,6 +1,7 @@
 FROM node:18-alpine as builder
 WORKDIR /my-space
 COPY package.json package-lock.json ./
+RUN npm install
 RUN npm ci
 COPY . .
 RUN npx prisma generate
