@@ -316,6 +316,7 @@ export default function Home () {
             <tbody>
               {data?.result?.map((_e: any, index: number) => (
                 <tr
+                  key={index}
                   onClick={() => handleSelectData(_e)}
                   className='cursor-pointer'
                 >

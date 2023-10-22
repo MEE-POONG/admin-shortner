@@ -20,7 +20,7 @@ export async function POST(request: Request) {
 
   const {
     user: { id, email, name },
-  } = session.session;
+  } = session;
 
   try {
     const res = await request.json();

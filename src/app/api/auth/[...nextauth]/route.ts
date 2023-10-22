@@ -1,15 +1,13 @@
 import NextAuth from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
 
-import type { AuthOptions, Session } from "next-auth";
+import type { AuthOptions } from "next-auth";
 
-import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
 import Logger from "@/lib/logger";
 
 const prisma = new PrismaClient();
 export const authOptions: AuthOptions = {
-  adapter: PrismaAdapter(prisma),
   secret: process.env.NEXTAUTH_SECRET,
   session: {
     strategy: "jwt",
@@ -29,18 +27,23 @@ export const authOptions: AuthOptions = {
   },
 
   callbacks: {
-    session: async ({ session }) => {
-      if (!session || !session.user) return;
+    async session({ session }) {
+      if (!session || !session.user) return session;
 
       const res = await prisma.user.findUnique({
         where: { email: session.user.email! },
       });
 
-      return {
-        session: {
-          user: res,
-        },
+      session.user = {
+        id: res?.id,
+        name: res?.name,
+        email: res?.email,
+        emailVerified: res?.emailVerified,
+        image: res?.image,
+        password: res?.password,
       };
+
+      return session;
     },
   },
 
@@ -55,7 +58,7 @@ export const authOptions: AuthOptions = {
         },
         password: { label: "Password", type: "password" },
       },
-      async authorize(credentials, req) {
+      async authorize(credentials) {
         if (!credentials) {
           throw new Error("Missing credentials");
         }

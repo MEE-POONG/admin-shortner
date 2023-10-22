@@ -17,7 +17,7 @@ export async function GET() {
 
   const {
     user: { id, email, name },
-  } = session.session;
+  } = session;
 
   Logger(`GET: /api/customers id: ${id} email: ${email} name: ${name}`);
 
@@ -40,7 +40,7 @@ export async function POST(request: Request) {
 
   const {
     user: { id, email, name },
-  } = session.session;
+  } = session;
 
   const res = await request.json();
 
