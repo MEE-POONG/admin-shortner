@@ -12,13 +12,10 @@ type ShortUrlData = {
 
 export default function Home () {
   const [id, setId] = useState(null)
-  const [idAgent, setIdAgent] = useState('')
-  const [userAgent, setUserAgent] = useState('')
-  const [origUrl, setOrigUrl] = useState('')
+  const [idCustomer, setIdCustomer] = useState('')
   const [userCustomer, setUserCustomer] = useState('')
   const [tel, setTel] = useState('')
-  const [shortUrl, setShortUrl] = useState('')
-  const [shortUrlData, setShortUrlData] = useState<ShortUrlData>({})
+  const [shortUrlData, setShortUrlData] = useState([])
 
   const [{ data }, refetch] = useAxios('/api/customer', {
     autoCancel: false,
@@ -31,36 +28,30 @@ export default function Home () {
     refetch()
   }, [])
 
-  const handleInputIdAgent = (e: {
+  const handleInputIdCustomer = (e: {
     target: { value: SetStateAction<string> }
-  }) => setIdAgent(e.target.value)
-  const handleInputUserAgent = (e: {
-    target: { value: SetStateAction<string> }
-  }) => setUserAgent(e.target.value)
-  const handleInputOrigUrl = (e: {
-    target: { value: SetStateAction<string> }
-  }) => setOrigUrl(e.target.value)
+  }) => setIdCustomer(e.target.value)
+
   const handleInputUserCustomer = (e: {
     target: { value: SetStateAction<string> }
   }) => setUserCustomer(e.target.value)
+
   const handleInputTel = (e: { target: { value: SetStateAction<string> } }) =>
     setTel(e.target.value)
 
-  const handleGenerateShortUrl = async () => {
+  const handleGenerateShortUrl = async (origUrl: string) => {
     if (!validateUrl(origUrl)) {
       return
     }
 
     try {
-      const response = await axios({
+      await axios({
         method: 'post',
         url: '/api/short-url',
         data: {
           origUrl
         }
       })
-      setShortUrl(response.data.shortUrl)
-      setShortUrlData(response.data)
     } catch (error) {
       Logger(`Error generating short url: ${error}`)
     }
@@ -68,14 +59,6 @@ export default function Home () {
 
   const handleSubmit = async (e: { preventDefault: () => void }) => {
     e.preventDefault()
-
-    if (!shortUrlData.id) {
-      return Swal.fire({
-        icon: 'error',
-        title: 'Oops...',
-        text: 'Something went wrong!'
-      })
-    }
 
     Swal.fire({
       title: 'Please Wait !',
@@ -87,19 +70,30 @@ export default function Home () {
     })
 
     try {
-      await axios({
+      const customer = await axios({
         method: 'post',
         url: '/api/customer',
         data: {
           id,
-          idAgent,
-          userAgent,
-          origUrl,
+          idCustomer,
           userCustomer,
-          tel,
-          urlId: shortUrlData.id
+          tel
         }
       })
+      const agents = await axios({
+        method: 'get',
+        url: '/api/agent'
+      })
+      for (const { idAgent } of agents.data.result) {
+        await axios({
+          method: 'post',
+          url: '/api/short-url',
+          data: {
+            origUrl: `https://www.ufaposeidon99.com/?ag=${idAgent}&recommend=${userCustomer}`,
+            customerId: customer.data.result.id
+          }
+        })
+      }
       refetch()
       handleClearInputs()
       Swal.fire({
@@ -118,35 +112,22 @@ export default function Home () {
 
   const handleClearInputs = () => {
     setId(null)
-    setIdAgent('')
-    setUserAgent('')
-    setOrigUrl('')
+    setIdCustomer('')
     setUserCustomer('')
     setTel('')
-    setShortUrl('')
-    setShortUrlData({})
+    setShortUrlData([])
   }
 
   const handleSelectData = async (e: any) => {
     setId(e.id)
-    setIdAgent(e.idAgent)
-    setUserAgent(e.userAgent)
-    setOrigUrl(e.url.origUrl)
+    setIdCustomer(e.idCustomer)
     setUserCustomer(e.userCustomer)
     setTel(e.tel)
-    setShortUrl(e.url.shortUrl)
-    setShortUrlData(e.url)
+    setShortUrlData(e.urls)
   }
 
-  const HEADER = [
-    // 'no',
-    'id Agent',
-    'user Agent',
-    'origUrl',
-    'user Customer',
-    // 'tel',
-    'Short Link'
-  ]
+  const HEADER = ['no', 'id Customer', 'user Customer', 'tel']
+  const HEADER_LINK = ['no', 'click', 'Short Url', 'Orig Url']
 
   return (
     <div className='md:container md:mx-auto'>
@@ -161,59 +142,20 @@ export default function Home () {
             </p>
 
             <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6'>
-              <div className='sm:col-span-1 sm:col-start-1'>
+              <div className='sm:col-span-2 sm:col-start-1'>
                 <label
                   htmlFor='id-agent'
                   className='block text-sm font-medium leading-6 text-gray-900'
                 >
-                  ID Agent
+                  ID Customer
                 </label>
                 <div className='mt-2'>
                   <input
-                    value={idAgent}
-                    onChange={handleInputIdAgent}
+                    value={idCustomer}
+                    onChange={handleInputIdCustomer}
                     type='text'
                     name='id-agent'
                     id='id-agent'
-                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
-                  />
-                </div>
-              </div>
-
-              <div className='sm:col-span-1'>
-                <label
-                  htmlFor='user-agent'
-                  className='block text-sm font-medium leading-6 text-gray-900'
-                >
-                  User Agent
-                </label>
-                <div className='mt-2'>
-                  <input
-                    value={userAgent}
-                    onChange={handleInputUserAgent}
-                    type='text'
-                    name='user-agent'
-                    id='user-agent'
-                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
-                  />
-                </div>
-              </div>
-
-              <div className='sm:col-span-4'>
-                <label
-                  htmlFor='link-original'
-                  className='block text-sm font-medium leading-6 text-gray-900'
-                >
-                  Link Original
-                </label>
-                <div className='mt-2'>
-                  <input
-                    value={origUrl}
-                    onChange={handleInputOrigUrl}
-                    onBlur={handleGenerateShortUrl}
-                    type='text'
-                    name='link-original'
-                    id='link-original'
                     className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
                   />
                 </div>
@@ -257,25 +199,56 @@ export default function Home () {
                   />
                 </div>
               </div>
-
-              <div className='sm:col-span-2'>
-                <label
-                  htmlFor='short-link'
-                  className='block text-sm font-medium leading-6 text-gray-900'
-                >
-                  Short Link
-                </label>
-                <div className='mt-2'>
-                  <input
-                    value={shortUrl}
-                    id='short-link'
-                    name='short-link'
-                    type='short-link'
-                    readOnly
-                    disabled
-                    className='pl-2 block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
-                  />
-                </div>
+            </div>
+            
+            <div className='mt-10 rounded-3xl overflow-hidden shadow-lg bg-white mb-10'>
+              <div className='overflow-x-auto'>
+                <table className='table table-zebra'>
+                  <thead>
+                    <tr>
+                      {HEADER_LINK.map(_ => (
+                        <th
+                          key={_}
+                          className='px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'
+                        >
+                          {_}
+                        </th>
+                      ))}
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {shortUrlData?.map(
+                      ({ clicks, origUrl, shortUrl }, index) => (
+                        <tr key={index} className='cursor-pointer'>
+                          <th className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'>
+                            {index + 1}
+                          </th>
+                          <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                            {clicks}
+                          </td>
+                          <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                            {origUrl}
+                          </td>
+                          <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
+                            {shortUrl}
+                          </td>
+                        </tr>
+                      )
+                    )}
+                  </tbody>
+                  <tfoot>
+                    <tr>
+                      {HEADER_LINK.map(_ => (
+                        <th
+                          key={_}
+                          className='px-6 py-3 border-b border-gray-200 bg-gray-50 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'
+                        >
+                          {_}
+                        </th>
+                      ))}
+                    </tr>
+                  </tfoot>
+                </table>
               </div>
             </div>
           </div>
@@ -320,26 +293,17 @@ export default function Home () {
                   onClick={() => handleSelectData(_e)}
                   className='cursor-pointer'
                 >
-                  {/* <th className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'>
+                  <th className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'>
                     {index + 1}
-                  </th> */}
+                  </th>
                   <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.idAgent}
+                    {_e?.idCustomer}
                   </td>
                   <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.userAgent}
+                    {_e?.userCustomer}
                   </td>
                   <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.url.origUrl}
-                  </td>
-                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.userCustomer}
-                  </td>
-                  {/* <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.tel}
-                  </td> */}
-                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e.url.shortUrl}
+                    {_e?.tel}
                   </td>
                 </tr>
               ))}

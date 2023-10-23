@@ -24,9 +24,15 @@ export async function POST(request: Request) {
 
   try {
     const res = await request.json();
-    Logger(`POST /api/short-url id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(res, null, 2)}`);
+    Logger(
+      `POST /api/short-url id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(
+        res,
+        null,
+        2
+      )}`
+    );
 
-    const { origUrl } = res;
+    const { origUrl, customerId } = res;
     const base = "https://thpsd.com";
 
     const urlId = nanoid(4);
@@ -34,11 +40,19 @@ export async function POST(request: Request) {
     if (validateUrl(origUrl)) {
       let url = await prisma.urls.findFirst({ where: { origUrl } });
       if (url) {
+        await prisma.urls.update({
+          where: { origUrl },
+          data: {
+            origUrl,
+            customerId,
+            v: url.v + 1,
+          },
+        });
         return Response.json(url);
       } else {
         const shortUrl = `${base}/${urlId}`;
 
-        const url = await prisma.urls.create({
+        const data = await prisma.urls.create({
           data: {
             origUrl,
             shortUrl,
@@ -46,11 +60,12 @@ export async function POST(request: Request) {
             date: new Date().toISOString(),
             v: 0,
             clicks: 0,
+            customerId,
           },
         });
 
-        Logger(`Response JSON: ${JSON.stringify(url, null, 2)}`);
-        return Response.json(url);
+        Logger(`Response JSON: ${JSON.stringify(data, null, 2)}`);
+        return Response.json(data);
       }
     } else {
       Logger(`Invalid URL: ${origUrl}`);

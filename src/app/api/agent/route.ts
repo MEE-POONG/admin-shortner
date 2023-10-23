@@ -21,11 +21,7 @@ export async function GET() {
 
   Logger(`GET: /api/customers id: ${id} email: ${email} name: ${name}`);
 
-  const result = await prisma.customer.findMany({
-    include: {
-      urls: true,
-    },
-  });
+  const result = await prisma.agent.findMany({});
   return Response.json({ result });
 }
 export async function POST(request: Request) {
@@ -44,8 +40,13 @@ export async function POST(request: Request) {
 
   const res = await request.json();
 
-  Logger(`POST /api/customers id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(res, null, 2)}`);
-
+  Logger(
+    `POST /api/customers id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(
+      res,
+      null,
+      2
+    )}`
+  );
 
   const result = await prisma.customer.upsert({
     where: {
