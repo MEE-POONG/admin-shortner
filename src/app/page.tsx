@@ -12,7 +12,6 @@ type ShortUrlData = {
 
 export default function Home () {
   const [id, setId] = useState(null)
-  const [idCustomer, setIdCustomer] = useState('')
   const [userCustomer, setUserCustomer] = useState('')
   const [tel, setTel] = useState('')
   const [shortUrlData, setShortUrlData] = useState([])
@@ -27,10 +26,6 @@ export default function Home () {
   useEffect(() => {
     refetch()
   }, [])
-
-  const handleInputIdCustomer = (e: {
-    target: { value: SetStateAction<string> }
-  }) => setIdCustomer(e.target.value)
 
   const handleInputUserCustomer = (e: {
     target: { value: SetStateAction<string> }
@@ -75,7 +70,6 @@ export default function Home () {
         url: '/api/customer',
         data: {
           id,
-          idCustomer,
           userCustomer,
           tel
         }
@@ -112,7 +106,6 @@ export default function Home () {
 
   const handleClearInputs = () => {
     setId(null)
-    setIdCustomer('')
     setUserCustomer('')
     setTel('')
     setShortUrlData([])
@@ -120,7 +113,6 @@ export default function Home () {
 
   const handleSelectData = async (e: any) => {
     setId(e.id)
-    setIdCustomer(e.idCustomer)
     setUserCustomer(e.userCustomer)
     setTel(e.tel)
     setShortUrlData(e.urls)
@@ -142,24 +134,6 @@ export default function Home () {
             </p>
 
             <div className='mt-10 grid grid-cols-1 gap-x-6 gap-y-8 sm:grid-cols-6'>
-              <div className='sm:col-span-2 sm:col-start-1'>
-                <label
-                  htmlFor='id-agent'
-                  className='block text-sm font-medium leading-6 text-gray-900'
-                >
-                  ID Customer
-                </label>
-                <div className='mt-2'>
-                  <input
-                    value={idCustomer}
-                    onChange={handleInputIdCustomer}
-                    type='text'
-                    name='id-agent'
-                    id='id-agent'
-                    className='block w-full rounded-md border-0 py-1.5 text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 placeholder:text-gray-400 focus:ring-2 focus:ring-inset focus:ring-indigo-600 sm:text-sm sm:leading-6'
-                  />
-                </div>
-              </div>
 
               <div className='sm:col-span-2'>
                 <label
@@ -296,9 +270,6 @@ export default function Home () {
                   <th className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-500 uppercase tracking-wider'>
                     {index + 1}
                   </th>
-                  <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
-                    {_e?.idCustomer}
-                  </td>
                   <td className='px-6 py-3 border-b border-gray-200 text-left text-xs leading-4 font-medium text-gray-900 uppercase tracking-wider'>
                     {_e?.userCustomer}
                   </td>

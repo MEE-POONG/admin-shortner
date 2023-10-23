@@ -49,18 +49,16 @@ export async function POST(request: Request) {
 
   const result = await prisma.customer.upsert({
     where: {
-      idCustomer: res.idCustomer || undefined,
+      userCustomer: res.userCustomer || undefined,
     },
     include: {
       urls: true,
     },
     update: {
-      idCustomer: res.idCustomer,
       userCustomer: res.userCustomer,
       tel: res.tel,
     },
     create: {
-      idCustomer: res.idCustomer,
       userCustomer: res.userCustomer,
       tel: res.tel,
     },

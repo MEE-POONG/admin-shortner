@@ -62,7 +62,6 @@ model agent {
 
 model customer {
   id           String @id @default(auto()) @map("_id") @db.ObjectId
-  idCustomer   String @unique
   userCustomer String @unique
   tel          String
   urls         urls[]

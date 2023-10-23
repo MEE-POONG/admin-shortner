@@ -4,10 +4,9 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.customer.deleteMany();
   const bob = await prisma.customer.upsert({
-    where: { idCustomer: "m02" },
+    where: { userCustomer: "55812" },
     update: {},
     create: {
-      idCustomer: "m02",
       userCustomer: "55812",
       tel: "0918136426"
     },
