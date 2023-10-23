@@ -118,7 +118,7 @@ export default function Home () {
     setShortUrlData(e.urls)
   }
 
-  const HEADER = ['no', 'id Customer', 'user Customer', 'tel']
+  const HEADER = ['no', 'user Customer', 'tel']
   const HEADER_LINK = ['no', 'click', 'Short Url', 'Orig Url']
 
   return (
