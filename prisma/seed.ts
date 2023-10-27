@@ -3,16 +3,7 @@ const prisma = new PrismaClient();
 
 async function main() {
   await prisma.customer.deleteMany();
-  const bob = await prisma.customer.upsert({
-    where: { userCustomer: "55812" },
-    update: {},
-    create: {
-      userCustomer: "55812",
-      tel: "0918136426"
-    },
-  });
-
-  console.log({ bob });
+  await prisma.user.deleteMany();
   console.log(
     JSON.stringify(
       await prisma.customer.findMany({ include: { urls: true } }),
