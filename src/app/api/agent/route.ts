@@ -60,6 +60,7 @@ export async function POST(request: Request) {
       tel: res.tel,
     },
     create: {
+      username: res.tel,
       userCustomer: res.userCustomer,
       tel: res.tel,
     },

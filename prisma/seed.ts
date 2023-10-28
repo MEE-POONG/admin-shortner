@@ -4,6 +4,7 @@ const prisma = new PrismaClient();
 async function main() {
   await prisma.customer.deleteMany();
   await prisma.user.deleteMany();
+  await prisma.urls.deleteMany();
   console.log(
     JSON.stringify(
       await prisma.customer.findMany({ include: { urls: true } }),
