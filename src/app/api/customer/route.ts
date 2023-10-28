@@ -44,8 +44,13 @@ export async function POST(request: Request) {
 
   const res = await request.json();
 
-  Logger(`POST /api/customers id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(res, null, 2)}`);
-
+  Logger(
+    `POST /api/customers id: ${id} email: ${email} name: ${name} \nBODY: ${JSON.stringify(
+      res,
+      null,
+      2
+    )}`
+  );
 
   const result = await prisma.customer.upsert({
     where: {
@@ -60,7 +65,19 @@ export async function POST(request: Request) {
     },
     create: {
       userCustomer: res.userCustomer,
+      username: res.tel,
       tel: res.tel,
+    },
+  });
+  await prisma.user.upsert({
+    where: { username: result.username },
+    update: {},
+    create: {
+      username: result.tel,
+      name: result.userCustomer,
+      password: "123456",
+      email: result.tel + "@thpsd.com",
+      image: "https://avatars.dicebear.com/api/initials/jsmith.svg",
     },
   });
   return Response.json({ result });
