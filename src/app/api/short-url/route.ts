@@ -38,9 +38,9 @@ export async function POST(request: Request) {
     const urlId = nanoid(4);
 
     if (validateUrl(origUrl)) {
-      let url = await prisma.urls.findFirst({ where: { origUrl } });
+      let url = await prisma.uRLsData.findFirst({ where: { origUrl } });
       if (url) {
-        await prisma.urls.update({
+        await prisma.uRLsData.update({
           where: { origUrl },
           data: {
             origUrl,
@@ -52,7 +52,7 @@ export async function POST(request: Request) {
       } else {
         const shortUrl = `${base}/${urlId}`;
 
-        const data = await prisma.urls.create({
+        const data = await prisma.uRLsData.create({
           data: {
             origUrl,
             shortUrl,

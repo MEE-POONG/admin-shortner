@@ -7,47 +7,61 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-model Account {
-  id                String  @id @default(auto()) @map("_id") @db.ObjectId
-  userId            String  @db.ObjectId
+model UserData {
+  id            String        @id @default(auto()) @map("_id") @db.ObjectId
+  firstname     String?
+  lastname      String?
+  username      String?       @unique
+  email         String?       @unique
+  password      String?
+  emailVerified DateTime?
+  image         String?
+  tel           String?
+  createdAt     DateTime      @default(now())
+  createdBy     String
+  updateAt      DateTime      @updatedAt
+  updateBy      String
+  accounts      AccountData[]
+  sessions      SessionData[]
+  PaymentData   PaymentData[]
+  AdminData     AdminData?
+  URLsData      URLsData[]
+}
+
+model AdminData {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  tel      String
+  user     UserData @relation(fields: [username], references: [username])
+  username String   @unique
+}
+
+model AccountData {
+  id                String   @id @default(auto()) @map("_id") @db.ObjectId
+  userId            String   @db.ObjectId
   type              String
   provider          String
   providerAccountId String
-  refresh_token     String? @db.String
-  access_token      String? @db.String
+  refresh_token     String?  @db.String
+  access_token      String?  @db.String
   expires_at        Int?
   token_type        String?
   scope             String?
-  id_token          String? @db.String
+  id_token          String?  @db.String
   session_state     String?
-
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user              UserData @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   @@unique([provider, providerAccountId])
 }
 
-model Session {
+model SessionData {
   id           String   @id @default(auto()) @map("_id") @db.ObjectId
   sessionToken String   @unique
   userId       String   @db.ObjectId
   expires      DateTime
-  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user         UserData @relation(fields: [userId], references: [id], onDelete: Cascade)
 }
 
-model User {
-  id            String    @id @default(auto()) @map("_id") @db.ObjectId
-  name          String?
-  email         String?   @unique
-  username      String?   @unique
-  emailVerified DateTime?
-  password      String?
-  image         String?
-  accounts      Account[]
-  sessions      Session[]
-  customer      customer?
-}
-
-model VerificationToken {
+model VerificationTokenData {
   id         String   @id @default(auto()) @map("_id") @db.ObjectId
   identifier String
   token      String   @unique
@@ -56,29 +70,42 @@ model VerificationToken {
   @@unique([identifier, token])
 }
 
-model agent {
-  id        String @id @default(auto()) @map("_id") @db.ObjectId
-  idAgent   String @unique
-  userAgent String @unique
+model URLsData {
+  id       String   @id @default(auto()) @map("_id") @db.ObjectId
+  v        Int      @map("__v")
+  clicks   Int
+  date     String
+  origUrl  String   @unique
+  shortUrl String
+  urlId    String   @unique
+  user     UserData @relation(fields: [userId], references: [id], onDelete: Cascade)
+  userId   String   @db.ObjectId
 }
 
-model customer {
-  id           String @id @default(auto()) @map("_id") @db.ObjectId
-  userCustomer String @unique
-  tel          String
-  urls         urls[]
-  user         User   @relation(fields: [username], references: [username])
-  username     String @unique
+model PackageData {
+  id          String        @id @default(auto()) @map("_id") @db.ObjectId
+  name        String
+  price       Float
+  setlink     String?
+  setQR       String?
+  createdAt   DateTime      @default(now())
+  createdBy   String
+  updateAt    DateTime      @updatedAt
+  updateBy    String
+  PaymentData PaymentData[]
 }
 
-model urls {
-  id         String    @id @default(auto()) @map("_id") @db.ObjectId
-  v          Int       @map("__v")
-  clicks     Int
-  date       String
-  origUrl    String    @unique
-  shortUrl   String
-  urlId      String    @unique
-  customer   customer? @relation(fields: [customerId], references: [id])
-  customerId String?   @db.ObjectId
+model PaymentData {
+  id           String       @id @default(auto()) @map("_id") @db.ObjectId
+  purchaseDate DateTime
+  buyDay       DateTime
+  payDay       DateTime
+  createdAt    DateTime     @default(now())
+  createdBy    String
+  updateAt     DateTime     @updatedAt
+  updateBy     String
+  packageData  PackageData? @relation(fields: [packageId], references: [id])
+  packageId    String?      @db.ObjectId
+  user         UserData?    @relation(fields: [userId], references: [id])
+  userId       String?      @db.ObjectId
 }
